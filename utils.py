@@ -1,5 +1,5 @@
 """
-This module provides helper functions for Advent of Code solutions.
+This module provides helper functions for orchestration Advent of Code puzzle solutions.
 """
 ### stdlib imports
 import copy
@@ -12,20 +12,20 @@ import typer
 
 
 # Global variables
-_quietMode: bool = False
-_part1SolutionFunc: typing.Optional[typing.Callable] = None
-_part2SolutionFunc: typing.Optional[typing.Callable] = None
-_solutionOptions: dict[str, typing.Union[str, bool]] = {}
+_quiet_mode: bool = False
+_part1_solution_func: typing.Optional[typing.Callable] = None
+_part2_solution_func: typing.Optional[typing.Callable] = None
+_exec_options: dict[str, typing.Union[str, bool]] = {}
 
 
-def getOption(key: str) -> typing.Union[str, bool, None]:
+def get_option(key: str) -> typing.Union[str, bool, None]:
     """Get the value of a CLI solution option. If not defined, will return `None`."""
-    return _solutionOptions.get(key, None)
+    return _exec_options.get(key, None)
 
 
 def part1(func: typing.Callable[[str], typing.Any]):
     """
-    Decorator to wrap around the solution method for Part 1.
+    Decorator to wrap around the solution function for Part 1.
 
     The first (and only) positional argument is the puzzle input.
 
@@ -40,14 +40,14 @@ def part1(func: typing.Callable[[str], typing.Any]):
         return answer
     ```
     """
-    global _part1SolutionFunc
-    _part1SolutionFunc = func
+    global _part1_solution_func
+    _part1_solution_func = func
     return func
 
 
 def part2(func: typing.Callable[[str, typing.Any], None]):
     """
-    Decorator to wrap around the solution method for Part 2.
+    Decorator to wrap around the solution function for Part 2.
 
     The first positional argument is the puzzle input. The second argument is
     the return value from Part 1's solution function.
@@ -60,8 +60,8 @@ def part2(func: typing.Callable[[str, typing.Any], None]):
         utils.printAnswer(str(answer))
     ```
     """
-    global _part2SolutionFunc
-    _part2SolutionFunc = func
+    global _part2_solution_func
+    _part2_solution_func = func
     return func
 
 
@@ -73,88 +73,88 @@ def _cli(
         not sys.stdout.isatty(),
         "-q",
         "--quiet",
-        help="Enable quiet mode. Suppresses messages and fancy formatting. Warning and errors will still be written to STDERR. Automatically enabled if stdout is not a tty.",
+        help="Enables quiet mode. Suppresses messages and fancy formatting. Warnings and errors will still be written to STDERR. Automatically enabled if stdout is not a tty.",
     ),
     skip_part2: bool = typer.Option(
         False,
         "--skip-part-2/",
         "-s/",
-        help="Skip executing the Part 2 solution. Part 1 will ALWAYS execute.",
+        help="Skip execution of the solution for part 2. Part 1 will ALWAYS be executed.",
     ),
     option: list[str] = typer.Option(
         [],
         "-o",
         "--option",
-        help="Provide an execution option to the solution methods. Syntax is '--option KEY=VALUE' or '--option FLAG' for a boolean flag. Available execution options should be documented in the solution script itself.",
+        help="Provide the solution with an execution option. These options may enable extra output (like ASCII displays) or perhaps experimental behaviors. Syntax is '--option KEY=VALUE' or '--option FLAG' for a boolean flag. Available options should be documented in the solution script itself. Can be specified multiple times to set more than one option.",
     ),
 ):
-    """Internal method for executing the puzzle solutions."""
+    """Internal function for executing the puzzle solutions."""
     # First we need to read and decode the puzzle input.
-    inputData: str = input.read().decode()
+    input_data: str = input.read().decode()
 
     # Next, we should parse out any key=value options
     for entry in option:
-        entrySplit = entry.split("=")
-        key = entrySplit[0]
-        value = True if len(entrySplit) == 1 else entrySplit[1]
-        _solutionOptions[key] = value
+        entry_split = entry.split("=")
+        key = entry_split[0]
+        value = True if len(entry_split) == 1 else entry_split[1]
+        _exec_options[key] = value
 
-    global _quietMode, _part1SolutionFunc, _part2SolutionFunc
-    _quietMode = quiet
+    global _quiet_mode, _part1_solution_func, _part2_solution_func
+    _quiet_mode = quiet
 
     # Run the part 1 solution
-    part1Result: typing.Any = None
-    if _part1SolutionFunc is None:
-        printError("No solution method for Part 1 was defined!")
+    part1_result: typing.Any = None
+    if _part1_solution_func is None:
+        print_error("No solution function was defined for Part 1!")
         exit(1)
     else:
-        printMessage("Part 1 solution is executing...")
-        part1Result = _part1SolutionFunc(copy.copy(inputData))
+        print_message("Part 1 solution is executing...")
+        part1_result = _part1_solution_func(copy.copy(input_data))
 
     # Run the part 2 solution if desired and it exists
     if not skip_part2:
-        printMessage("")
-        if _part2SolutionFunc is None:
-            printWarning("No solution method for Part 2 was defined!")
+        print_message("")
+        if _part2_solution_func is None:
+            print_warning("No solution function was defined for Part 2!")
         else:
-            printMessage("Part 2 solution is executing...")
-            _part2SolutionFunc(copy.copy(inputData), part1Result)
+            print_message("Part 2 solution is executing...")
+            _part2_solution_func(copy.copy(input_data), part1_result)
 
 
 def start():
-    """This method will start the Typer CLI."""
+    """This function will start the Typer CLI."""
     typer.run(_cli)
 
 
-def printMessage(message: str) -> None:
-    if not _quietMode:
+def print_message(message: str) -> None:
+    if not _quiet_mode:
         rich.print(message)
 
 
-def printAnswer(value: typing.Any) -> None:
+def print_answer(value: typing.Any) -> None:
     """Print the solution to Part `part` of the puzzle"""
-    if _quietMode:
+    if _quiet_mode:
         print(value)
     else:
         rich.print(f"[green]Answer:[/] {value}")
 
 
-def printWarning(message: str) -> None:
+def print_warning(message: str) -> None:
     """Print a warning message."""
     rich.print(f"[yellow italic]Warning: {message}[/]", file=sys.stderr)
 
 
-def printComputationWarning() -> None:
+def print_computation_warning() -> None:
     """Print a warning about computation time."""
-    printWarning("It may take awhile to compute answers...")
+    print_warning("It may take awhile to compute answers...")
 
 
-def printComputationWarningWithPrompt() -> None:
+def print_computation_warning_with_prompt() -> None:
     """
     Print a warning about computation time,
     prompting the user to continue.
     """
-    if not _quietMode:
+    if not _quiet_mode:
         typer.confirm(
             "[yellow italic]Warning: It may take a very long while to compute answers. Continue?[/]",
             default=True,
@@ -162,6 +162,6 @@ def printComputationWarningWithPrompt() -> None:
         )
 
 
-def printError(message: str) -> None:
+def print_error(message: str) -> None:
     """Print an error in red and abort execution"""
     rich.print(f"[red]Error:[/] {message}", file=sys.stderr)

@@ -23,7 +23,7 @@ def part1(puzzleInput: str):
         sum += value
 
     # The answer is the sum
-    utils.printAnswer(sum)
+    utils.print_answer(sum)
 
     # Pass lines to the next part
     return lines
