@@ -1,6 +1,5 @@
 #! /usr/bin/env python3
-
-### vendor imports
+### stdlib imports
 import re
 
 ### local imports
