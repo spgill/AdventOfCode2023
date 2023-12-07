@@ -8,6 +8,7 @@ import typing
 
 ### vendor imports
 import rich
+import rich.prompt
 import typer
 
 
@@ -155,11 +156,11 @@ def print_computation_warning_with_prompt() -> None:
     prompting the user to continue.
     """
     if not _quiet_mode:
-        typer.confirm(
+        if not rich.prompt.Confirm.ask(
             "[yellow italic]Warning: It may take a very long while to compute answers. Continue?[/]",
             default=True,
-            abort=True,
-        )
+        ):
+            exit(1)
 
 
 def print_error(message: str) -> None:
